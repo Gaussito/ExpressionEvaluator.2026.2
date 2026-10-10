@@ -5,55 +5,116 @@ namespace Backend;
 
 public static class ExpressionEvaluator
 {
-    public static double Evalute(string infix) => EvalutePostfix(ToPostfix(infix));
+    public static double Evalute(string infix)
+    {
+        if (string.IsNullOrWhiteSpace(infix))
+        {
+            throw new Exception("La expresión está vacía.");
+        }
+
+        return EvalutePostfix(ToPostfix(infix));
+    }
 
     private static string ToPostfix(string infix)
     {
-        var posfix = string.Empty;
+        var postfix = string.Empty;
         var stack = new Stack<char>();
-        foreach (var item in infix)
+
+        int i = 0;
+
+        while (i < infix.Length)
         {
+            char item = infix[i];
+
+            // Ignorar espacios
+            if (char.IsWhiteSpace(item))
+            {
+                i++;
+                continue;
+            }
+
+            // Leer números completos, incluyendo decimales
+            if (char.IsDigit(item) || item == '.')
+            {
+                string number = string.Empty;
+                int decimalCount = 0;
+
+                while (i < infix.Length &&
+                       (char.IsDigit(infix[i]) || infix[i] == '.'))
+                {
+                    if (infix[i] == '.')
+                    {
+                        decimalCount++;
+
+                        if (decimalCount > 1)
+                        {
+                            throw new Exception("Número decimal inválido.");
+                        }
+                    }
+
+                    number += infix[i];
+                    i++;
+                }
+
+                if (number == ".")
+                {
+                    throw new Exception("Número decimal inválido.");
+                }
+
+                postfix += number + " ";
+                continue;
+            }
+
             if (IsOperator(item))
             {
                 if (item == ')')
                 {
-                    var ope = stack.Pop();
-                    while(ope != '(')
+                    while (stack.Count > 0 && stack.Peek() != '(')
                     {
-                        posfix += ope;
-                        ope = stack.Pop();
+                        postfix += stack.Pop() + " ";
                     }
+
+                    if (stack.Count == 0)
+                    {
+                        throw new Exception("Paréntesis desbalanceados.");
+                    }
+
+                    stack.Pop();
+                }
+                else if (item == '(')
+                {
+                    stack.Push(item);
                 }
                 else
                 {
-                    if (stack.Count == 0)
+                    while (stack.Count > 0 &&
+                           stack.Peek() != '(' &&
+                           PriorityStack(stack.Peek()) >= PriorityInfix(item))
                     {
-                        stack.Push(item);
+                        postfix += stack.Pop() + " ";
                     }
-                    else
-                    {
-                        if (PriorityInfix(item) > PriorityStack(stack.Peek()))
-                        {
-                            stack.Push(item);
-                        }
-                        else
-                        {
-                            posfix += stack.Pop();
-                            stack.Push(item);
-                        }
-                    }
+
+                    stack.Push(item);
                 }
+
+                i++;
+                continue;
             }
-            else
-            {
-                posfix += item;
-            }
+
+            throw new Exception($"Carácter inválido: {item}");
         }
-        do
+
+        while (stack.Count > 0)
         {
-            posfix += stack.Pop();
-        } while (stack.Count != 0);
-        return posfix;
+            if (stack.Peek() == '(')
+            {
+                throw new Exception("Paréntesis desbalanceados.");
+            }
+
+            postfix += stack.Pop() + " ";
+        }
+
+        return postfix;
     }
 
     private static int PriorityStack(char op) => op switch
@@ -64,7 +125,7 @@ public static class ExpressionEvaluator
         '+' => 1,
         '-' => 1,
         '(' => 0,
-        _ => throw new Exception("Invalid expression."),
+        _ => throw new Exception("Operador inválido."),
     };
 
     private static int PriorityInfix(char op) => op switch
@@ -74,28 +135,62 @@ public static class ExpressionEvaluator
         '/' => 2,
         '+' => 1,
         '-' => 1,
-        '(' => 5,
-        _ => throw new Exception("Invalid expression."),
+        _ => throw new Exception("Operador inválido."),
     };
 
-    private static bool IsOperator(char item) => item == '^' || item == '*' || item == '/' || item == '+' || item == '-' || item == '(' || item == ')';
+    private static bool IsOperator(char item) =>
+        item == '^' ||
+        item == '*' ||
+        item == '/' ||
+        item == '+' ||
+        item == '-' ||
+        item == '(' ||
+        item == ')';
 
     private static double EvalutePostfix(string postfix)
     {
         var stack = new Stack<double>();
-        foreach (var item in postfix)
+
+        string[] tokens = postfix.Split(
+            ' ',
+            StringSplitOptions.RemoveEmptyEntries
+        );
+
+        foreach (string token in tokens)
         {
-            if (IsOperator(item))
+            if (double.TryParse(
+                token,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out double number))
             {
-                var ope2 = stack.Pop();
-                var ope1 = stack.Pop();
-                stack.Push(Calculate(ope1, ope2, item));
+                stack.Push(number);
+            }
+            else if (token.Length == 1 && IsOperator(token[0]))
+            {
+                if (stack.Count < 2)
+                {
+                    throw new Exception("Expresión inválida.");
+                }
+
+                char operation = token[0];
+
+                double ope2 = stack.Pop();
+                double ope1 = stack.Pop();
+
+                stack.Push(Calculate(ope1, ope2, operation));
             }
             else
             {
-                stack.Push(char.GetNumericValue(item));
+                throw new Exception("Expresión inválida.");
             }
         }
+
+        if (stack.Count != 1)
+        {
+            throw new Exception("Expresión inválida.");
+        }
+
         return stack.Pop();
     }
 
@@ -106,6 +201,6 @@ public static class ExpressionEvaluator
         '+' => ope1 + ope2,
         '-' => ope1 - ope2,
         '^' => Math.Pow(ope1, ope2),
-        _ => throw new Exception("Invalid expression."),
+        _ => throw new Exception("Operador inválido."),
     };
 }
