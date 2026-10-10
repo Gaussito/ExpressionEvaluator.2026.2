@@ -1,13 +1,49 @@
-﻿using Backend;
+using Backend;
 
-var infix = "4*5/(4+6)";
-Console.WriteLine($"Infix = {infix}, Result = {ExpressionEvaluator.Evalute(infix):N5}"); // 2
+Console.WriteLine("======================================");
+Console.WriteLine("     EXPRESSION EVALUATOR - PRUEBAS");
+Console.WriteLine("======================================");
+Console.WriteLine();
 
-var infix2 = "4*(5+6-(8/2^3)-7)-1";
-Console.WriteLine($"Infix = {infix2}, Result = {ExpressionEvaluator.Evalute(infix2):N5}"); // 11
+Probar("2 + 3");
+Probar("12 + 35");
+Probar("125 * 4");
+Probar("100 / 4");
+Probar("12.5 + 3.75");
+Probar("125.50 + 32.75");
+Probar("(12.5 + 3.5) * 2");
+Probar("2 + 3 * 4");
+Probar("4 ^ 3");
+Probar("0.5 + 0.25");
+Probar("1000.75 - 250.25");
+Probar("10.5 * 2");
+Probar("99.99 / 3");
+Probar("(100.5 - 20.5) / 4");
+Probar("2.5 ^ 2");
+Probar("10 + 20 * 3");
+Probar("(10 + 20) * 3");
+Probar("12.50 + 32.75");
 
-var infix3 = "4*7^(1/3)*7*((1+9)/3*7^4)";
-Console.WriteLine($"Infix = {infix3}, Result = {ExpressionEvaluator.Evalute(infix3):N5}"); // 428,675.12518474100 
 
-var infix4 = "144^(1/2)";
-Console.WriteLine($"Infix = {infix4}, Result = {ExpressionEvaluator.Evalute(infix4):N5}"); // 12
+Console.WriteLine();
+Console.WriteLine("======================================");
+Console.WriteLine("          PRUEBAS FINALIZADAS");
+Console.WriteLine("======================================");
+
+static void Probar(string expresion)
+{
+    try
+    {
+        double resultado = ExpressionEvaluator.Evalute(expresion);
+
+        Console.WriteLine(
+            $"Expresión: {expresion,-25} Resultado: {resultado}"
+        );
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(
+            $"Expresión: {expresion,-25} ERROR: {ex.Message}"
+        );
+    }
+}
